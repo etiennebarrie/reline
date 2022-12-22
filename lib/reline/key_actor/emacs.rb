@@ -381,7 +381,7 @@ class Reline::KeyActor::Emacs < Reline::KeyActor::Base
     # 189 M-=
     :ed_unassigned,
     # 190 M->
-    :ed_unassigned,
+    :end_of_history,
     # 191 M-?
     :ed_unassigned,
     # 192 M-@
