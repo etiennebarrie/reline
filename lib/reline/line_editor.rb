@@ -1918,6 +1918,17 @@ class Reline::LineEditor
   end
   alias_method :yank, :em_yank
 
+  private def em_yank_last_arg(key)
+    return if Reline::HISTORY.empty?
+    last_line = Reline::HISTORY[-1]
+    *, last_word = last_line.rpartition(" ")
+    @line = byteinsert(@line, @byte_pointer, last_word)
+    word_width = calculate_width(last_word)
+    @cursor += word_width
+    @cursor_max += word_width
+    @byte_pointer += last_word.bytesize
+  end
+
   private def em_yank_pop(key)
     yanked, prev_yank = @kill_ring.yank_pop
     if yanked
