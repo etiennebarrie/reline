@@ -349,7 +349,7 @@ class Reline::KeyActor::Emacs < Reline::KeyActor::Base
     # 173 M--
     :ed_unassigned,
     # 174 M-.
-    :ed_unassigned,
+    :em_yank_last_arg,
     # 175 M-/
     :ed_unassigned,
     # 176 M-0
