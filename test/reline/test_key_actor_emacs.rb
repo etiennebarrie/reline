@@ -1358,6 +1358,18 @@ class Reline::KeyActor::Emacs::Test < Reline::TestCase
     assert_line_around_cursor('hoge', '')
   end
 
+  def test_em_yank_last_arg
+    Reline::HISTORY.replace([])
+    input_keys("\M-.", false)
+    assert_line("")
+    Reline::HISTORY << "line with words"
+    input_keys("\M-.", false)
+    assert_line("words")
+    Reline::HISTORY << "word"
+    input_keys("\C-u\M-.", false)
+    assert_line("word")
+  end
+
   def test_em_kill_region_with_kill_ring
     input_keys("def hoge\C-b\C-b\C-b\C-b", false)
     assert_line_around_cursor('def ', 'hoge')
