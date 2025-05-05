@@ -244,6 +244,106 @@ class Reline::LineEditor
     end
   end
 
+  class RenderFinishedTest < Reline::TestCase
+    class TestIO < Reline::IO
+      def initialize
+        @output = +''
+      end
+
+      attr_reader :output
+
+      def encoding
+        Encoding::UTF_8
+      end
+
+      def write(string)
+        @output << string
+      end
+
+      def move_cursor_column(col)
+        @output << "[COL_#{col}]"
+      end
+
+      def move_cursor_down(lines)
+        @output << "[DOWN_#{lines}]" if lines != 0
+      end
+
+      def erase_after_cursor
+        @output << '[ERASE]'
+      end
+
+      def hide_cursor
+        @output << '[HIDE]'
+      end
+
+      def show_cursor
+        @output << '[SHOW]'
+      end
+
+      def buffered_output
+        yield
+      end
+    end
+
+    def setup
+      verbose, $VERBOSE = $VERBOSE, nil
+      @line_editor = Reline::LineEditor.new(Reline::Config.new)
+      @line_editor.instance_variable_set(:@screen_size, [24, 80])
+      @original_iogate = Reline::IOGate
+      @test_io = TestIO.new
+      Reline.send(:remove_const, :IOGate)
+      Reline.const_set(:IOGate, @test_io)
+    ensure
+      $VERBOSE = verbose
+    end
+
+    def teardown
+      Reline.send(:remove_const, :IOGate)
+      Reline.const_set(:IOGate, @original_iogate)
+    end
+
+    def test_render_finished_with_prompt
+      @line_editor.instance_variable_set(:@buffer_of_lines, ['hello'])
+      @line_editor.instance_variable_set(:@line_index, 0)
+      @line_editor.instance_variable_set(:@byte_pointer, 5)
+      @line_editor.instance_variable_set(:@prompt, '> ')
+      @line_editor.instance_variable_set(:@rendered_screen, Reline::LineEditor::RenderedScreen.new(base_y: 0, lines: [], cursor_y: 0))
+      @line_editor.render_finished_without_prompt = false
+
+      @line_editor.render_finished
+
+      assert_match(/> hello\r\n/, @test_io.output)
+    end
+
+    def test_render_finished_without_prompt
+      @line_editor.instance_variable_set(:@buffer_of_lines, ['hello'])
+      @line_editor.instance_variable_set(:@line_index, 0)
+      @line_editor.instance_variable_set(:@byte_pointer, 5)
+      @line_editor.instance_variable_set(:@prompt, '> ')
+      @line_editor.instance_variable_set(:@rendered_screen, Reline::LineEditor::RenderedScreen.new(base_y: 0, lines: [], cursor_y: 0))
+      @line_editor.render_finished_without_prompt = true
+
+      @line_editor.render_finished
+
+      assert_match(/hello\r\n/, @test_io.output)
+      refute_match(/> hello/, @test_io.output)
+    end
+
+    def test_render_finished_without_prompt_empty_buffer
+      @line_editor.instance_variable_set(:@buffer_of_lines, [''])
+      @line_editor.instance_variable_set(:@line_index, 0)
+      @line_editor.instance_variable_set(:@byte_pointer, 0)
+      @line_editor.instance_variable_set(:@prompt, '> ')
+      @line_editor.instance_variable_set(:@rendered_screen, Reline::LineEditor::RenderedScreen.new(base_y: 0, lines: [], cursor_y: 0))
+      @line_editor.render_finished_without_prompt = true
+
+      @line_editor.render_finished
+
+      # Should not output any content lines when buffer is empty
+      refute_match(/\r\n/, @test_io.output)
+    end
+  end
+
   def test_menu_info_format
     list = %w[aa b c d e f g hhh i j k]
     col3 = [

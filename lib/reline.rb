@@ -52,6 +52,7 @@ module Reline
       auto_indent_proc
       pre_input_hook
       dig_perfect_match_proc
+      render_finished_without_prompt
     ).each(&method(:attr_reader))
 
     attr_accessor :config
@@ -157,6 +158,8 @@ module Reline
       raise ArgumentError unless p.respond_to?(:call) or p.nil?
       @dig_perfect_match_proc = p
     end
+
+    attr_writer :render_finished_without_prompt
 
     DialogProc = Struct.new(:dialog_proc, :context)
     def add_dialog_proc(name_sym, p, context = nil)
@@ -323,6 +326,7 @@ module Reline
       line_editor.prompt_proc = prompt_proc
       line_editor.auto_indent_proc = auto_indent_proc
       line_editor.dig_perfect_match_proc = dig_perfect_match_proc
+      line_editor.render_finished_without_prompt = render_finished_without_prompt
 
       pre_input_hook&.call
 

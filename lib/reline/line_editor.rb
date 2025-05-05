@@ -13,6 +13,7 @@ class Reline::LineEditor
   attr_accessor :prompt_proc
   attr_accessor :auto_indent_proc
   attr_accessor :dig_perfect_match_proc
+  attr_accessor :render_finished_without_prompt
 
   VI_MOTIONS = %i{
     ed_prev_char
@@ -245,6 +246,7 @@ class Reline::LineEditor
     @drop_terminate_spaces = false
     @in_pasting = false
     @auto_indent_proc = nil
+    @render_finished_without_prompt = false
     @dialogs = []
     @interrupted = false
     @resized = false
@@ -461,12 +463,19 @@ class Reline::LineEditor
   def render_finished
     Reline::IOGate.buffered_output do
       render_differential([], 0, 0)
-      lines = @buffer_of_lines.size.times.map do |i|
-        line = Reline::Unicode.strip_non_printing_start_end(prompt_list[i]) + modified_lines[i]
-        wrapped_lines = split_line_by_width(line, screen_width)
-        wrapped_lines.last.empty? ? "#{line} " : line
+      lines =
+        if render_finished_without_prompt
+          modified_lines
+        else
+          @buffer_of_lines.size.times.map do |i|
+            line = Reline::Unicode.strip_non_printing_start_end(prompt_list[i]) + modified_lines[i]
+            wrapped_lines = split_line_by_width(line, screen_width)
+            wrapped_lines.last.empty? ? "#{line} " : line
+          end
+        end
+      unless lines.size == 1 && lines.first.empty?
+        Reline::IOGate.write lines.map { |l| "#{l}\r\n" }.join
       end
-      Reline::IOGate.write lines.map { |l| "#{l}\r\n" }.join
     end
   end
 
